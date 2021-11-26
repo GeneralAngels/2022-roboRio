@@ -34,7 +34,7 @@ public class DriveTrain {
     private static final double ENCODER_TO_CM = ENCODER_TO_RADIAN * WHEEL_RADIUS;
 
     private PID pidLeft = new PID(0.004, 0, 0);
-    private PID pidRight = new PID(0.008, 0, 0);
+    private PID pidRight = new PID(0.004, 0, 0);
 
     private double leftError;
     private double rightError;
@@ -64,25 +64,28 @@ public class DriveTrain {
     public void customAutoPeriodic(){
         return;
     }
-
+   
     public void roboDrive(){
         double leftDist = leftEncoder.getDistance();
-      rightDist = rightEncoder.getDistance();
+        rightDist = rightEncoder.getDistance();
 
-      if (leftError > 5) {
-        leftError = distance - leftDist;
-        double leftPow = pidLeft.Compute(leftError);
-        System.out.println("LeftEr: " + leftDist);
-        System.out.println("Left: " + leftPow);
-        leftControllerGroup.set(leftPow);
-      }
+        if (leftError > 5) {
+            leftError = distance - leftDist;
+            double leftPow = pidLeft.Compute(leftError);
+            System.out.println("LeftEr: " + leftDist);
+            System.out.println("Left: " + leftPow);
+            leftControllerGroup.set(leftPow);
+        }
 
-      if (rightError > 5) {
-        rightError = distance - rightDist;
-        double rightPow = pidRight.Compute(rightError);
-        System.out.println("RighttEr: " + rightDist);
-        System.out.println("Right: " + rightPow);
-        rightControllerGroup.set(rightPow);
-      }
+        if (rightError > 5) {
+            rightError = distance - rightDist;
+            double rightPow = pidRight.Compute(rightError);
+            System.out.println("RighttEr: " + rightDist);
+            System.out.println("Right: " + rightPow);
+            rightControllerGroup.set(rightPow);
+        }
+        
+
+
     }
 }
