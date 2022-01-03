@@ -9,8 +9,10 @@ import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-// import frc.robot.PID;
 
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
+// import frc.robot.PID;
 
 public class DriveTrain {
     public static final String kDefaultAuto = "Default";
@@ -18,13 +20,11 @@ public class DriveTrain {
     public String m_autoSelected;
     private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-    private final VictorSP leftUpMotor = new VictorSP(0);
-    private final VictorSP leftDownMotor = new VictorSP(1);
-    private final VictorSP rightUpMotor = new VictorSP(4);
-    private final VictorSP rightDownMotor = new VictorSP(5);
+    private final TalonFX leftDownMotor = new TalonFX(15);
+    private final TalonFX leftUpMotor = new TalonFX(14);
+    private final TalonFX rightDownMotor = new TalonFX(0);
+    private final TalonFX rightUpMotor = new TalonFX(1);
 
-    private final SpeedControllerGroup leftControllerGroup = new SpeedControllerGroup(leftDownMotor, leftUpMotor);
-    private final SpeedControllerGroup rightControllerGroup = new SpeedControllerGroup(rightDownMotor, rightUpMotor);
     private final Encoder leftEncoder = new Encoder(2, 3, false, Encoder.EncodingType.k4X);
     private final Encoder rightEncoder = new Encoder(1, 0, false, Encoder.EncodingType.k4X);
 
@@ -39,34 +39,34 @@ public class DriveTrain {
     private double leftError;
     private double rightError;
     private double distance;
-    double rightDist;
+    private double rightDist;
+    private double leftDist;
 
-    public void roboInit(){
+    public void roboInit() {
         m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
         m_chooser.addOption("My Auto", kCustomAuto);
         SmartDashboard.putData("Auto choices", m_chooser);
         leftEncoder.setDistancePerPulse(ENCODER_TO_CM);
         rightEncoder.setDistancePerPulse(ENCODER_TO_CM);
-    } 
+    }
 
-    public void autoInit(){
+    public void autoInit() {
         m_autoSelected = m_chooser.getSelected();
         // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
         System.out.println("Auto selected: " + m_autoSelected);
         distance = 100;
-        leftControllerGroup.setInverted(true);
         leftEncoder.reset();
         rightEncoder.reset();
         leftError = distance;
         rightError = distance;
     }
 
-    public void customAutoPeriodic(){
+    public void customAutoPeriodic() {
         return;
     }
-   
-    public void roboDrive(){
-        double leftDist = leftEncoder.getDistance();
+
+    public void roboDrive() {
+        leftDist = leftEncoder.getDistance();
         rightDist = rightEncoder.getDistance();
 
         if (leftError > 5) {
@@ -74,7 +74,6 @@ public class DriveTrain {
             double leftPow = pidLeft.Compute(leftError);
             System.out.println("LeftEr: " + leftDist);
             System.out.println("Left: " + leftPow);
-            leftControllerGroup.set(leftPow);
         }
 
         if (rightError > 5) {
@@ -82,10 +81,6 @@ public class DriveTrain {
             double rightPow = pidRight.Compute(rightError);
             System.out.println("RighttEr: " + rightDist);
             System.out.println("Right: " + rightPow);
-            rightControllerGroup.set(rightPow);
         }
-        
-
-
     }
 }
