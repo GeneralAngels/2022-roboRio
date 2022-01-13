@@ -2,6 +2,9 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
+// https://gist.github.com/jcorcoran/e56d985fd1ee290b075d13c9f9aa3595
+// our god and savior
+
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -24,7 +27,8 @@ public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
   // creating a drivetrain object used for driving the robot using joysticks
-  private Drive_Train driveDriveTrain = new Drive_Train(1, 0);
+  //parameters: joysticks ports
+  private Drive_Train driveDriveTrain = new Drive_Train(0, 1);
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -38,6 +42,8 @@ public class Robot extends TimedRobot {
 
     // initializing drive trains
     driveDriveTrain.Init();
+    driveDriveTrain.setDist(2);
+
 
   }
 
@@ -71,6 +77,9 @@ public class Robot extends TimedRobot {
     m_autoSelected = m_chooser.getSelected();
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
+
+    // driveDriveTrain.setDist(200);
+
   }
 
   /** This function is called periodically during autonomous. */
@@ -82,7 +91,9 @@ public class Robot extends TimedRobot {
         break;
       case kDefaultAuto:
       default:
-
+        if(driveDriveTrain.canDrive())
+          driveDriveTrain.driveByDist();
+        
         break;
     }
   }
