@@ -28,7 +28,7 @@ public class Robot extends TimedRobot {
 
   // creating a drivetrain object used for driving the robot using joysticks
   //parameters: joysticks ports
-  private Drive_Train driveDriveTrain = new Drive_Train(0, 1);
+  private Drive_Train driveDriveTrain = new Drive_Train(2, 1, 0);
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -42,7 +42,7 @@ public class Robot extends TimedRobot {
 
     // initializing drive trains
     driveDriveTrain.Init();
-    driveDriveTrain.setDist(2);
+
 
 
   }
@@ -79,7 +79,9 @@ public class Robot extends TimedRobot {
     System.out.println("Auto selected: " + m_autoSelected);
 
     // driveDriveTrain.setDist(200);
-
+    driveDriveTrain.setDist(1);
+    driveDriveTrain.AutonomusInit();
+    
   }
 
   /** This function is called periodically during autonomous. */
@@ -91,9 +93,9 @@ public class Robot extends TimedRobot {
         break;
       case kDefaultAuto:
       default:
+        System.out.println(driveDriveTrain.canDrive());
         if(driveDriveTrain.canDrive())
           driveDriveTrain.driveByDist();
-        
         break;
     }
   }
