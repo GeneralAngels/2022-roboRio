@@ -1,6 +1,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.XboxController;
 
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 
@@ -11,12 +12,17 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 public class Drive_Train {
     private Joystick rightJoystick;
     private Joystick leftJoystick;
+    private XboxController controller;
     
     // initializing the motors
     private final TalonFX leftDownMotor = new TalonFX(3);
     private final TalonFX leftUpMotor = new TalonFX(2);
     private final TalonFX rightDownMotor = new TalonFX(0);
     private final TalonFX rightUpMotor = new TalonFX(1);
+    private final TalonFX shooting1 = new TalonFX(4);
+    private final TalonFX shooting2 = new TalonFX(5);
+
+
 
     // defining wheel diameters and settings
     // private final double WHEEL_RADIUS = 7.62;
@@ -24,13 +30,16 @@ public class Drive_Train {
     // private final double ENCODER_TO_RADIAN = (2 * Math.PI) / TICKS_PER_REVOLUTION;
     // private final double ENCODER_TO_CM = ENCODER_TO_RADIAN * WHEEL_RADIUS;
 
-    private final double WHEEL_RADIUS = 0.0762;
+    private final double WHEEL_RADIUS = 0.1524 / 2;
     private final double PULSES_PER_REVOLUTION = 15000;
     private final double ENCODER_TO_RADIAN = (2 * Math.PI) / PULSES_PER_REVOLUTION;
     private final double ENCODER_TO_M = ENCODER_TO_RADIAN * WHEEL_RADIUS;
+
+    private final double WHEEL_SCOPE = (2 * WHEEL_RADIUS) * Math.PI;
+    private final double METER_DRIVE = (1 / WHEEL_SCOPE) * PULSES_PER_REVOLUTION;
   
     // max speed of the motors (out of 1)
-    private final double maxSpeed = 0.3;
+    private final double maxSpeed = 0.25;
 
     // tells the robot what distance to travel
     private double travel_dist = 0;
@@ -39,15 +48,16 @@ public class Drive_Train {
     private double robo_dist = 0;
 
     // making PID controllers for each side of the robot
-    private PID pidLeft = new PID(0.003, 0.002, 0.001);
-    private PID pidRight = new PID(0.003, 0.002, 0.001);
+    private PID pidLeft = new PID(1.8, 0.4, 0.7);
+    private PID pidRight = new PID(1.8, 0.4, 0.7);
     private double leftError;
     private double rightError;
 
     // currently only sets the joysticks
-    public Drive_Train(int leftJoystickPort, int rightJoystickPort){
+    public Drive_Train(int leftJoystickPort, int rightJoystickPort, int xboxPort){
         rightJoystick = new Joystick(rightJoystickPort);
         leftJoystick = new Joystick(leftJoystickPort);
+        controller = new XboxController(xboxPort);
     }
 
     public void Init(){
@@ -55,15 +65,20 @@ public class Drive_Train {
         leftUpMotor.setInverted(false);
         rightDownMotor.setInverted(true);
         rightUpMotor.setInverted(true);
-
-        rightDownMotor.setSelectedSensorPosition(0);
-        leftDownMotor.setSelectedSensorPosition(0);
-
-        
+        shooting1.setInverted(false);
+        shooting2.setInverted(true);
+        resetEncoders();
         // setting how many cm the robot moves each pulse
         // will get the distance travelled when calling encoder.getDistance
     }
-
+    public void AutonomusInit()
+    {
+        pidLeft.Reset();
+        pidRight.Reset();
+        resetEncoders();
+        leftError = travel_dist;
+        rightError = travel_dist;
+    }
     public void JoyStickDrive(){
 
         // setting the power to drive at
@@ -71,8 +86,23 @@ public class Drive_Train {
         double leftPow = -1 * maxSpeed * leftJoystick.getY();
         double rightPow = -1 * maxSpeed * rightJoystick.getY();
 
+
         setLeftGroup(leftPow);
         setRightGroup(rightPow);
+
+       
+
+        while (controller.getAButtonPressed()){
+            setShootPow(0.3);
+        } 
+        while (controller.getAButtonReleased()){
+            setShootPow(0);
+        }
+
+
+        
+
+        
         
 
     }
@@ -86,34 +116,73 @@ public class Drive_Train {
     /** this function uses the distance that was set to drive that distance*/
     public void driveByDist(){
 
-        double right_dist = rightDownMotor.getSelectedSensorPosition() * ENCODER_TO_M; 
-        double left_dist = leftDownMotor.getSelectedSensorPosition() * ENCODER_TO_M;
+        // double right_dist = ((rightDownMotor.getSelectedSensorPosition() + rightUpMotor.getSelectedSensorPosition()) / 2) * ENCODER_TO_M; 
+        // double left_dist = ((leftDownMotor.getSelectedSensorPosition() + leftUpMotor.getSelectedSensorPosition()) / 2) * ENCODER_TO_M; 
 
-        rightError = travel_dist - right_dist;
-        leftError = travel_dist - left_dist;
-        // System.out.println("right:  " + rightDownMotor.getSelectedSensorPosition());
-        System.out.println("right:  " + right_dist);
-        // System.out.println("left:   " + leftDownMotor.getSelectedSensorPosition());
-        System.out.println("left:  " + left_dist);
-        // System.out.println(travel_dist);
-        // if (right_dist < travel_dist){
-        //     setRightGroup(maxSpeed * pidRight.Compute(rightError));
-        // }
-        // else
-        //     setRightGroup(0);
-        // if (left_dist < travel_dist){
-        //     setRightGroup(maxSpeed * pidRight.Compute(rightError));
-        // }
-        // else
-        //     setLeftGroup(0);
-        setRightGroup(maxSpeed * pidRight.Compute(rightError));
-        setLeftGroup(maxSpeed * pidLeft.Compute(leftError));
+        // // double right_dist = rightDownMotor.getSelectedSensorPosition() * METER_DRIVE; 
+        // // double left_dist = leftDownMotor.getSelectedSensorPosition() * METER_DRIVE;
+
+        // rightError = travel_dist - right_dist;
+        // leftError = travel_dist - left_dist;
+        // //System.out.println("rightDown Encoder:  " + rightDownMotor.getSelectedSensorPosition());
+        // //System.out.println("rightUp Encoder:  " + rightUpMotor.getSelectedSensorPosition());
+
+        // System.out.println("right:  " + rightError);
+        // //System.out.println("leftDown Encoder:   " + leftDownMotor.getSelectedSensorPosition());
+        // //System.out.println("leftUp Encoder:   " + leftUpMotor.getSelectedSensorPosition());
+
+        // System.out.println("left:  " + leftError);
+        // // System.out.println(travel_dist);
+        // // if (right_dist < travel_dist){
+        // //     setRightGroup(maxSpeed * pidRight.Compute(rightError));
+        // // }
+        // // else
+        // //     setRightGroup(0);
+        // // if (left_dist < travel_dist){
+        // //     setRightGroup(maxSpeed * pidRight.Compute(rightError));
+        // // }
+        // // else
+        // //     setLeftGroup(0);
+        // setRightGroup(-maxSpeed * pidRight.Compute(rightError));
+        // setLeftGroup(maxSpeed * pidLeft.Compute(leftError));
+    
+    //new code:
+    double right_dist = ((rightDownMotor.getSelectedSensorPosition() + rightUpMotor.getSelectedSensorPosition()) / 2) * ENCODER_TO_M; 
+    double left_dist = ((leftDownMotor.getSelectedSensorPosition() + leftUpMotor.getSelectedSensorPosition()) / 2) * ENCODER_TO_M; 
+    leftError = travel_dist - left_dist;
+    rightError = travel_dist - right_dist;
+    robo_dist = (left_dist + right_dist) / 2; 
+    System.out.println("right error:   " + rightError);
+    System.out.println("left error:   " + leftError);
+    double rightPow = pidRight.Compute(rightError);
+    double leftPow = pidLeft.Compute(leftError);
+    System.out.println("Left Power:    " + leftPow);
+    System.out.println("Right Power:    " + rightPow);
+    setRightGroup(-maxSpeed * pidRight.Compute(rightError));
+    setLeftGroup(maxSpeed * pidLeft.Compute(leftError));
+
     }
+
+    public void resetEncoders()
+    {
+        rightDownMotor.setSelectedSensorPosition(0);
+        leftDownMotor.setSelectedSensorPosition(0);
+
+        rightUpMotor.setSelectedSensorPosition(0);
+        leftUpMotor.setSelectedSensorPosition(0);
+    }
+    public boolean isError()
+    {
+        return leftError > 0 || rightError > 0; 
+    }
+
 
     public boolean canDrive(){
-        if (robo_dist > travel_dist) return false;
-        return true;
+        // if (robo_dist > (travel_dist) - 0.01) return false;
+        // return true;
+        return !(robo_dist > (travel_dist) - 0.01);
     }
+
 
     public void Disabled(){
         // stop the motors when the code is disabled
@@ -121,8 +190,8 @@ public class Drive_Train {
     }
 
     public void setRightGroup(double power){
-        rightDownMotor.set(ControlMode.PercentOutput, power);
-        rightUpMotor.set(ControlMode.PercentOutput, power);   
+        rightDownMotor.set(ControlMode.PercentOutput, -power);
+        rightUpMotor.set(ControlMode.PercentOutput, -power);   
     }
 
     public void setLeftGroup(double power){
@@ -130,10 +199,21 @@ public class Drive_Train {
         leftUpMotor.set(ControlMode.PercentOutput, power);   
     }
 
+    public void setShootPow(double power){
+        shooting1.set(ControlMode.PercentOutput, power);
+        shooting2.set(ControlMode.PercentOutput, power);
+
+    }
+
     public void disableMotors(){
         setLeftGroup(0);
         setRightGroup(0);
+        leftDownMotor.setSelectedSensorPosition(0);
+        leftUpMotor.setSelectedSensorPosition(0);
+        rightDownMotor.setSelectedSensorPosition(0);
+        rightUpMotor.setSelectedSensorPosition(0);
+
     }
     
-    
+
 }
