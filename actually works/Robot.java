@@ -7,10 +7,14 @@
 
 package frc.robot;
 
+
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 /**
  * The VM is configured to automatically run this class, and to call the
  * functions corresponding to each mode, as described in the TimedRobot
@@ -21,14 +25,19 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class Robot extends TimedRobot {
 
   // i have no idea
+  private static final XboxController cont = new XboxController(0); 
+  private CANSparkMax saprky = new CANSparkMax(4 , MotorType.kBrushless);
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
-
   // creating a drivetrain object used for driving the robot using joysticks
   //parameters: joysticks ports
-  private Drive_Train driveDriveTrain = new Drive_Train(2, 1, 0);
+  private Drive_Train driveDriveTrain = new Drive_Train(1, 0, 2);
+
+  private boolean doTurn = true;
+
+  private int grace;
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -39,11 +48,14 @@ public class Robot extends TimedRobot {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
-
     // initializing drive trains
     driveDriveTrain.Init();
 
+    grace = 0;
 
+    // driveDriveTrain.testVelocity();
+
+    // checkPID();
 
   }
 
@@ -78,8 +90,6 @@ public class Robot extends TimedRobot {
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
 
-    // driveDriveTrain.setDist(200);
-    driveDriveTrain.setDist(1);
     driveDriveTrain.AutonomusInit();
     
   }
@@ -93,12 +103,51 @@ public class Robot extends TimedRobot {
         break;
       case kDefaultAuto:
       default:
-        System.out.println(driveDriveTrain.canDrive());
-        if(driveDriveTrain.canDrive())
-          driveDriveTrain.driveByDist();
+        // driveDriveTrain.motorCheck();
+        // driveDriveTrain.driveBySpeed(0.2);
+        // driveDriveTrain.driveByPower(0.1);
+        // driveDriveTrain.driveTrainPeriodic();
+        // driveDriveTrain.testEncoders();
+        // driveDriveTrain.testVelocity();
+
+        // if (doTurn){
+        //   driveDriveTrain.turn(90);
+        //   driveDriveTrain.Disabled();
+        //   doTurn = false;
+        // }
+
+        // driveDriveTrain.printDegrees();
+        // driveDriveTrain.printDegreesFromTarget();
+
+        // if (driveDriveTrain.TargetOnScreen()){
+        //   driveDriveTrain.turn(driveDriveTrain.getDegreesFromTarget());
+        //   grace = 0;
+        // }
+        // else
+        //   grace++;
+        //   if (grace == 2000){
+        //     driveDriveTrain.resetRotation();
+            
+        //   }
+        
+          
         break;
     }
   }
+
+  // public void checkPID(){
+  //   PID pidTest = new PID(0.4, 1, 0.05);
+
+  //   double target = 10;
+  //   double thing = 0;
+  //   double error = target;
+
+  //   while (thing != 0){
+  //     thing += pidTest.Compute(error);
+  //     System.out.println(thing);
+  //     error = target - thing;
+  //   }
+  // }
 
   /** This function is called once when teleop is enabled. */
   @Override
@@ -108,9 +157,11 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-
+    if(cont.getRightBumper())
+      saprky.set(0.3);
     // driving using joysticks
-    driveDriveTrain.JoyStickDrive();
+    // driveDriveTrain.JoyStickDrive();
+    // driveDriveTrain.testPidgey();
 
   }
 
