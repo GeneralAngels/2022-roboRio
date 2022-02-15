@@ -13,8 +13,8 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+// import com.revrobotics.CANSparkMax;
+// import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 /**
  * The VM is configured to automatically run this class, and to call the
  * functions corresponding to each mode, as described in the TimedRobot
@@ -26,18 +26,19 @@ public class Robot extends TimedRobot {
 
   // i have no idea
   private static final XboxController cont = new XboxController(0); 
-  private CANSparkMax saprky = new CANSparkMax(4 , MotorType.kBrushless);
+  // private CANSparkMax saprky = new CANSparkMax(4 , MotorType.kBrushless);
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   // creating a drivetrain object used for driving the robot using joysticks
   //parameters: joysticks ports
-  private Drive_Train driveDriveTrain = new Drive_Train(1, 0, 2);
+  public Drive_Train driveDriveTrain = new Drive_Train(1, 0, 2);
 
   private boolean doTurn = true;
 
   private int grace;
+  private double lastDegreesFromTarget;
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -52,10 +53,14 @@ public class Robot extends TimedRobot {
     driveDriveTrain.Init();
 
     grace = 0;
+    lastDegreesFromTarget = 0;
+    driveDriveTrain.resetRotation();
+
 
     // driveDriveTrain.testVelocity();
 
     // checkPID();
+    
 
   }
 
@@ -91,6 +96,19 @@ public class Robot extends TimedRobot {
     System.out.println("Auto selected: " + m_autoSelected);
 
     driveDriveTrain.AutonomusInit();
+    // driveDriveTrain.AddAction("Drive Distance", 1.00);
+    // driveDriveTrain.AddAction("Drive Distance", -1.00);
+    // driveDriveTrain.AddAction("Turn", -90);
+
+    // driveDriveTrain.AddAction("Drive Distance", 0.5);
+    // driveDriveTrain.AddAction("Turn", 90);
+    // driveDriveTrain.AddAction("Drive Distance", 0.5);
+    // driveDriveTrain.AddAction("Turn", 90);
+    // driveDriveTrain.AddAction("Drive Distance", 0.5);
+    // driveDriveTrain.AddAction("Turn", 90);
+    // driveDriveTrain.AddAction("Drive Distance", 0.5);
+
+    driveDriveTrain.AddAction("Drive Distance", 0.5);
     
   }
 
@@ -118,19 +136,22 @@ public class Robot extends TimedRobot {
 
         // driveDriveTrain.printDegrees();
         // driveDriveTrain.printDegreesFromTarget();
-
+        // System.out.println(grace);
         // if (driveDriveTrain.TargetOnScreen()){
         //   driveDriveTrain.turn(driveDriveTrain.getDegreesFromTarget());
         //   grace = 0;
+        //   lastDegreesFromTarget = driveDriveTrain.getDegreesFromTarget();
+          
         // }
         // else
         //   grace++;
-        //   if (grace == 2000){
+        //   if (grace == 33){
         //     driveDriveTrain.resetRotation();
-            
-        //   }
-        
-          
+        //     lastDegreesFromTarget = 0;
+        //   } else {
+        //     driveDriveTrain.turn(lastDegreesFromTarget);
+        //  
+        driveDriveTrain.MakeAction();
         break;
     }
   }
@@ -157,8 +178,8 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    if(cont.getRightBumper())
-      saprky.set(0.3);
+    // if(cont.getRightBumper())
+      // saprky.set(0.3);
     // driving using joysticks
     // driveDriveTrain.JoyStickDrive();
     // driveDriveTrain.testPidgey();

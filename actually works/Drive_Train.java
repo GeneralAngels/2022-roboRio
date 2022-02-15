@@ -22,23 +22,67 @@ public class Drive_Train {
 
     private final Limelight limey = new Limelight();
 
-    // max speed of the motors (out of 1)
-    private final double maxSpeed = 0.25;
 
     // the distance it traveled since last stopped
     private double robo_dist = 0;
 
-    // making PID controllers for each side of the robot
-    private PID add_sPID_right = new PID(0.5,0,0.3, roboConsts.MAX_POWER);
-    private PID add_sPID_left = new PID(0.5,0,0.3, roboConsts.MAX_POWER);
+    private double travel_dist;
 
-    private PID rotationPID = new PID(0.4, 0.11, 0.15, roboConsts.MAX_TURN_POWER);
+    private PID rotationPID = new PID(0.4, 0.11, 0.1, roboConsts.MAX_TURN_POWER);
+
+    private AutoSchedule schedule;
 
     // currently only sets the joysticks
     public Drive_Train(int leftJoystickPort, int rightJoystickPort, int xboxPort){
         rightJoystick = new Joystick(rightJoystickPort);
         leftJoystick = new Joystick(leftJoystickPort);
         controller = new XboxController(xboxPort);
+    }
+
+    public void AddAction(String name, double target){
+        
+        // my funky one ;)
+        schedule.addAction(new Action(name, target));
+    }
+    
+    public void MakeAction(){
+
+        if (schedule.getAction() == null){
+            disableMotors();
+            ResetAll();
+        }
+
+        else
+        {
+            if (schedule.currentActionName() == "Drive Distance"){
+                
+                if (robo_dist == 0){
+                    SetTravelDist(schedule.getAction().getTarget());
+                }
+
+                if (!schedule.getAction().finished(robo_dist, 0.02)){
+                    driveByDist();
+                }
+
+                else{
+                    ResetAll();
+                    schedule.removeAction();
+                }
+            }
+
+            if(schedule.currentActionName() == "Turn")
+            {
+                if(!schedule.getAction().finished(pidgey.getAngle(), 3)){
+                    turn(schedule.getAction().getTarget());
+                }
+
+                else
+                {
+                    ResetAll();
+                    schedule = schedule.getNext();
+                }
+            }
+        }
     }
 
     public void Init(){
@@ -48,14 +92,14 @@ public class Drive_Train {
         shooting1.setInverted(false);
         shooting2.setInverted(true);
         
-        RightGroup.SetPID(0.9, 0.4, 0.2);
-        RightGroup.SetSPID(0.4, 0.15, 0.1);
+        RightGroup.SetDistancePID(0.9, 0.4, 0.2);
+        RightGroup.SetSPID(0.07, 0.01, 0.01);
         
-        LeftGroup.SetPID(0.9, 0.4, 0.2);
-        LeftGroup.SetSPID(0.4, 0.15, 0.1);
+        LeftGroup.SetDistancePID(0.9, 0.4, 0.2);
+        LeftGroup.SetSPID(0.035, 0.005, 0.005);
 
         rotationPID.Reset();
-        
+        schedule = new AutoSchedule();
         resetEncoders();
     }
 
@@ -65,18 +109,25 @@ public class Drive_Train {
     }
 
     public void AutonomusInit(){
-        LeftGroup.ResetPID();
-        RightGroup.ResetPID();
-        add_sPID_left.Reset();
-        add_sPID_right.Reset();
+        LeftGroup.ResetDistancePID();
+        RightGroup.ResetDistancePID();
+        ResetSPID();
         resetEncoders();
+    }
+
+    public void SetTravelDist(double distance)
+    {
+        robo_dist = 0;
+        travel_dist = distance;
+        RightGroup.SetTravelDistance(distance);
+        LeftGroup.SetTravelDistance(distance);
     }
 
     public void JoyStickDrive(){
 
         // setting the power to drive at
-        double leftPow = -1 * maxSpeed * leftJoystick.getY();
-        double rightPow = -1 * maxSpeed * rightJoystick.getY();
+        double leftPow = -1 * roboConsts.MAX_POWER * leftJoystick.getY();
+        double rightPow = -1 * roboConsts.MAX_POWER * rightJoystick.getY();
 
         LeftGroup.SetPower(leftPow);
         RightGroup.SetPower(rightPow);  
@@ -94,11 +145,9 @@ public class Drive_Train {
 
     /** this function uses the distance that was set to drive that distance*/
     public void driveByDist(){
-        //new code:
-        System.out.println("lef power:   " + LeftGroup.DriveByDistance());
-        System.out.println("right power:   " + RightGroup.DriveByDistance());
-        robo_dist = (LeftGroup.getDistance() + RightGroup.getDistance()) /2;
-        System.out.println(robo_dist);
+
+        LeftGroup.DriveByDistance();
+        RightGroup.DriveByDistance();
     }
 
     public void driveBySpeed(double speed){
@@ -111,14 +160,12 @@ public class Drive_Train {
         LeftGroup.testEncoders();
     }
 
-    public void resetEncoders()
-    {
+    public void resetEncoders(){
         RightGroup.resetEncoders();
         LeftGroup.resetEncoders();
     }
 
     public void Disabled(){
-        // stop the motors when the code is disabled
         disableMotors();
     }
 
@@ -139,10 +186,10 @@ public class Drive_Train {
             double degreeError = (degrees - pidgey.getAngle()) / 180;
             double powerCalc = rotationPID.Compute(degreeError);
             
-            RightGroup.SetPower(-powerCalc);
-            LeftGroup.SetPower(powerCalc);
+            RightGroup.SetPower(powerCalc);
+            LeftGroup.SetPower(-powerCalc);
             System.out.println(powerCalc);
-            System.out.println(degrees);
+            System.out.println("Degrees: " + pidgey.getAngle());
             // printDegrees();
 
         // }
@@ -150,6 +197,7 @@ public class Drive_Train {
         // Disabled();
 
     }
+
     public void resetRotation(){
         pidgey.reset();
         rotationPID.Reset();
@@ -171,6 +219,26 @@ public class Drive_Train {
     public boolean TargetOnScreen(){
         return limey.hasValidTarget();
 
+    }
+
+    public void ResetSPID(){
+        LeftGroup.ResetSPID();
+        RightGroup.ResetSPID();
+    }
+
+    public void ResetPID(){
+        LeftGroup.ResetDistancePID();
+        RightGroup.ResetDistancePID();
+    }
+
+    public void ResetAll(){
+        robo_dist = 0;
+        resetEncoders();
+        ResetSPID();
+        ResetPID();
+        resetRotation();
+
+        
     }
 
 }

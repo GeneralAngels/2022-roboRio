@@ -1,8 +1,5 @@
 package frc.robot;
 
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.XboxController;
-
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.fasterxml.jackson.core.sym.Name;
 
@@ -13,11 +10,8 @@ import javax.xml.namespace.QName;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 
-import java.time.Duration;
-import java.time.Instant;
-
 public class MotorGroup {
-    private PID pid;
+    private PID distancePID;
     private TalonFX backMotor;
     private TalonFX frontMotor;
     private double TravelDistance;
@@ -32,6 +26,7 @@ public class MotorGroup {
         this.backMotor = new TalonFX(backPort);
         this.frontMotor = new TalonFX(frontPort);
         groupName = name;
+
     }
 
     /**
@@ -40,8 +35,8 @@ public class MotorGroup {
      * @param ki ki of pid
      * @param kd kd of pid
      */
-    public void SetPID(double kp, double ki, double kd){
-        pid = new PID(kp, ki, kd, roboConsts.MAX_POWER);
+    public void SetDistancePID(double kp, double ki, double kd){
+        distancePID = new PID(kp, ki, kd, roboConsts.MAX_POWER);
     }
 
     /**
@@ -89,7 +84,7 @@ public class MotorGroup {
      * @return the current distance travelled in meters
      */
     public double getDistance(){
-        return GetEncoderValue() * roboConsts.ENCODER_TO_M;
+        return GetEncoderValue() / roboConsts.METER_DRIVE;
     }
 
     /**
@@ -97,9 +92,9 @@ public class MotorGroup {
      * @param distance the distance to travel
      */
     public void SetTravelDistance(double distance){
-        this.resetEncoders();
-        this.TravelDistance = distance;
-        this.error = distance;
+        resetEncoders();
+        TravelDistance = distance;
+        error = distance;
     }
 
     /**
@@ -115,9 +110,9 @@ public class MotorGroup {
      * @return input power
      */
     public double DriveByDistance(){
-        this.error = this.GetDistamceError();
-        double power = this.pid.Compute(error);
-        this.SetPower(power * this.MaxPower);
+        error = GetDistanceError();
+        double power = distancePID.Compute(error);
+        SetPower(power);
         return power;
     }
 
@@ -129,30 +124,27 @@ public class MotorGroup {
         return GetSpeedPS() * roboConsts.ENCODER_TO_M;
     }
 
-    public double GetDistamceError(){
-        return this.TravelDistance - this.getDistance();
+    public double GetDistanceError(){
+        return TravelDistance - getDistance();
     }
 
-    public void ResetPID(){
-        this.pid.Reset();
+    public void ResetDistancePID(){
+        distancePID.Reset();
+    }
+
+    public void ResetSPID(){
+        sPID.Reset();
+        currPow = 0;
     }
 
     public void driveBySpeed(double speed){
         double velocity_average = GetSpeedMS();
         double speedErr = speed - velocity_average;
-
+        System.out.println("speed error" + this.groupName + "   :" + speedErr);
         currPow += sPID.Compute(speedErr);
-
-        if (currPow <= roboConsts.MAX_POWER && currPow >= -roboConsts.MAX_POWER)
-            SetPower(currPow);        
-        System.out.println("currPow:  " + currPow);
-
-        // if (!(currPow > roboConsts.MAX_POWER || currPow < -roboConsts.MAX_POWER))    
-        //     if (velocity_average > speed)
-        //         currPow -= 0.001;
-        //     else if (velocity_average < speed)
-        //         currPow += 0.001;
-        //     SetPower(currPow);
+        currPow = Math.max(-roboConsts.MAX_POWER, Math.min(currPow, roboConsts.MAX_POWER));
+        SetPower(currPow);        
+        System.out.println("currPow " + this.groupName + "  :"+ currPow);
     }
 
     public void motorPeriodic(){
@@ -166,18 +158,7 @@ public class MotorGroup {
     }
 
     public void testVelocity(){
-        // System.out.println("pls work");
-        // SetPower(1);
-        // long startTime = Instant.now().toEpochMilli();
-        // while (true){
-        //     System.out.println(Instant.now().toEpochMilli() - startTime);
-        //     System.out.println(GetEncoderValue());
-        // }
         ;
-        // System.out.println(groupName + ":");
-        // System.out.println(frontMotor.getSelectedSensorVelocity() * roboConsts.ENCODER_TO_M);
-        // System.out.println(backMotor.getSelectedSensorVelocity() * roboConsts.ENCODER_TO_M);
-        // System.out.println(getDistance());
     }
 
 
