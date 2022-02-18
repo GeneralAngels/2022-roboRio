@@ -21,4 +21,9 @@ public class Action {
     public double getTarget(){
         return this.target;
     }
+
+    @Override
+    public String toString(){
+        return actionName + " - " + target;
+    }
 }
