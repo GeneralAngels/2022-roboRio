@@ -8,7 +8,7 @@ public class PID {
 
     private double errSum, lastErr;
     private double kp, ki, kd;
-    private double MAXIMUM_INTEGRAL = 1;
+    private double MAXIMUM_INTEGRAL = 0.7;
 
     public PID(double kp, double ki, double kd, double maxOutput) {
         this.kp = kp;
@@ -24,6 +24,7 @@ public class PID {
         if (this.lastTime != 0) {
             double timeChange = (double) (now - this.lastTime);
             /* Compute all the working error variables */
+            
             this.errSum += ((error + this.lastErr) * timeChange) / 2;
             this.errSum = Math.max(-MAXIMUM_INTEGRAL,Math.min(this.errSum, MAXIMUM_INTEGRAL));
             dErr = (error - lastErr) * 1000 / timeChange / 1000;
