@@ -14,7 +14,7 @@ public class MotorGroup {
     private PID distancePID;
     private TalonFX backMotor;
     private TalonFX frontMotor;
-    private double TravelDistance;
+    private double distanceToTravel;
     private double MaxPower = 0.2;
     private double error;
     private PID sPID;
@@ -76,6 +76,7 @@ public class MotorGroup {
     }
 
     public void resetEncoders(){
+        new Print("wow");
         this.frontMotor.setSelectedSensorPosition(0);
         this.backMotor.setSelectedSensorPosition(0);
     }
@@ -84,7 +85,8 @@ public class MotorGroup {
      * @return the current distance travelled in meters
      */
     public double getDistance(){
-        return GetEncoderValue() / roboConsts.METER_DRIVE;
+        // return GetEncoderValue() / roboConsts.METER_DRIVE;
+        return GetEncoderValue() * roboConsts.ENCODER_TO_M;
     }
 
     /**
@@ -92,8 +94,7 @@ public class MotorGroup {
      * @param distance the distance to travel
      */
     public void SetTravelDistance(double distance){
-        resetEncoders();
-        TravelDistance = distance;
+        distanceToTravel = distance;
         error = distance;
     }
 
@@ -102,7 +103,7 @@ public class MotorGroup {
      * @return the distance to travel
      */
     public double GetTravelDistance(){
-        return this.TravelDistance;
+        return this.distanceToTravel;
     }
 
     /**
@@ -111,7 +112,11 @@ public class MotorGroup {
      */
     public double DriveByDistance(){
         error = GetDistanceError();
+        // new Print(GetEncoderValue());
+        new Print(groupName);
+        new Print("distance:  "+ getDistance());
         double power = distancePID.Compute(error);
+        new Print("power:  " + power);
         SetPower(power);
         return power;
     }
@@ -125,10 +130,10 @@ public class MotorGroup {
     }
 
     public double GetDistanceError(){
-        return TravelDistance - getDistance();
+        return distanceToTravel - getDistance();
     }
 
-    public void ResetDistancePID(){
+    public void  ResetDistancePID(){
         distancePID.Reset();
     }
 
@@ -153,7 +158,7 @@ public class MotorGroup {
 
     public void testEncoders(){
         System.out.println(groupName);
-        System.out.println(GetEncoderValue());
+        System.out.println(GetEncoderValue() + " - " + getDistance());
         System.out.println("-");
     }
 
