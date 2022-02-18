@@ -28,9 +28,9 @@ public class Drive_Train {
 
     private double travel_dist;
 
-    private PID rotationPID = new PID(0.4, 0.11, 0.1, roboConsts.MAX_TURN_POWER);
+    private PID rotationPID = new PID(0.5, 0.15, 0.1, roboConsts.MAX_TURN_POWER);
 
-    private AutoSchedule schedule;
+    private AutoSchedule driveSchedule;
 
     // currently only sets the joysticks
     public Drive_Train(int leftJoystickPort, int rightJoystickPort, int xboxPort){
@@ -42,46 +42,50 @@ public class Drive_Train {
     public void AddAction(String name, double target){
         
         // my funky one ;)
-        schedule.addAction(new Action(name, target));
+        driveSchedule.addAction(new Action(name, target));
+    }
+
+    public AutoSchedule getSchedule(){
+        return driveSchedule;
     }
     
     public void MakeAction(){
-
-        if (schedule.getAction() == null){
+        
+        if (driveSchedule.getAction() == null){
             disableMotors();
             ResetAll();
         }
-
         else
         {
-            if (schedule.currentActionName() == "Drive Distance"){
+            if (driveSchedule.currentActionName() == "Drive Distance"){
                 
                 if (robo_dist == 0){
-                    SetTravelDist(schedule.getAction().getTarget());
+                    ResetPID();
+                    SetTravelDist(driveSchedule.getAction().getTarget());
                 }
 
-                if (!schedule.getAction().finished(robo_dist, 0.02)){
+                if (!driveSchedule.currentActionFinished(robo_dist, 0.02)){
                     driveByDist();
                 }
 
-                else{
+                else {
                     ResetAll();
-                    schedule.removeAction();
+                    driveSchedule.removeAction();
                 }
             }
 
-            if(schedule.currentActionName() == "Turn")
+            else if(driveSchedule.currentActionName() == "Turn")
             {
-                if(!schedule.getAction().finished(pidgey.getAngle(), 3)){
-                    turn(schedule.getAction().getTarget());
+                if(!driveSchedule.currentActionFinished(pidgey.getAngle(), 3)){
+                    turn(driveSchedule.getAction().getTarget());
                 }
 
-                else
-                {
+                else {
                     ResetAll();
-                    schedule = schedule.getNext();
+                    driveSchedule = driveSchedule.getNext();
                 }
             }
+            
         }
     }
 
@@ -92,14 +96,14 @@ public class Drive_Train {
         shooting1.setInverted(false);
         shooting2.setInverted(true);
         
-        RightGroup.SetDistancePID(0.9, 0.4, 0.2);
+        RightGroup.SetDistancePID(0.4, 0.13, 0.14);
         RightGroup.SetSPID(0.07, 0.01, 0.01);
         
-        LeftGroup.SetDistancePID(0.9, 0.4, 0.2);
-        LeftGroup.SetSPID(0.035, 0.005, 0.005);
+        LeftGroup.SetDistancePID(0.4, 0.13, 0.14);
+        LeftGroup.SetSPID(0.07, 0.01, 0.01);
 
         rotationPID.Reset();
-        schedule = new AutoSchedule();
+        driveSchedule = new AutoSchedule();
         resetEncoders();
     }
 
@@ -113,10 +117,11 @@ public class Drive_Train {
         RightGroup.ResetDistancePID();
         ResetSPID();
         resetEncoders();
+
+        driveSchedule = new AutoSchedule();
     }
 
-    public void SetTravelDist(double distance)
-    {
+    public void SetTravelDist(double distance){
         robo_dist = 0;
         travel_dist = distance;
         RightGroup.SetTravelDistance(distance);
@@ -145,9 +150,9 @@ public class Drive_Train {
 
     /** this function uses the distance that was set to drive that distance*/
     public void driveByDist(){
-
         LeftGroup.DriveByDistance();
         RightGroup.DriveByDistance();
+        robo_dist = (LeftGroup.getDistance() + RightGroup.getDistance())/2;
     }
 
     public void driveBySpeed(double speed){
@@ -232,13 +237,17 @@ public class Drive_Train {
     }
 
     public void ResetAll(){
-        robo_dist = 0;
         resetEncoders();
         ResetSPID();
         ResetPID();
         resetRotation();
+        resetDistance();
+    }
 
-        
+    public void resetDistance(){
+        robo_dist = 0;
+        LeftGroup.SetTravelDistance(0);
+        RightGroup.SetTravelDistance(0);
     }
 
 }
