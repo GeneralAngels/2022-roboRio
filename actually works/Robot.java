@@ -35,11 +35,6 @@ public class Robot extends TimedRobot {
   //parameters: joysticks ports
   public Drive_Train driveDriveTrain = new Drive_Train(1, 0, 2);
 
-  private boolean doTurn = true;
-
-  private int grace;
-  private double lastDegreesFromTarget;
-
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
@@ -51,12 +46,9 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("Auto choices", m_chooser);
     // initializing drive trains
     driveDriveTrain.Init();
-
-    grace = 0;
-    lastDegreesFromTarget = 0;
     driveDriveTrain.resetRotation();
 
-
+    
     // driveDriveTrain.testVelocity();
 
     // checkPID();
@@ -96,20 +88,34 @@ public class Robot extends TimedRobot {
     System.out.println("Auto selected: " + m_autoSelected);
 
     driveDriveTrain.AutonomusInit();
-    // driveDriveTrain.AddAction("Drive Distance", 1.00);
-    // driveDriveTrain.AddAction("Drive Distance", -1.00);
-    // driveDriveTrain.AddAction("Turn", -90);
 
     // driveDriveTrain.AddAction("Drive Distance", 0.5);
     // driveDriveTrain.AddAction("Turn", 90);
     // driveDriveTrain.AddAction("Drive Distance", 0.5);
     // driveDriveTrain.AddAction("Turn", 90);
-    // driveDriveTrain.AddAction("Drive Distance", 0.5);
+    driveDriveTrain.ResetAll();
+    // driveDriveTrain.AddAction("Drive Distance", 0.75);
     // driveDriveTrain.AddAction("Turn", 90);
-    // driveDriveTrain.AddAction("Drive Distance", 0.5);
-
-    driveDriveTrain.AddAction("Drive Distance", 0.5);
+    // driveDriveTrain.AddAction("Drive Distance", 0.75);
+    // driveDriveTrain.AddAction("Turn", 90);
+    // driveDriveTrain.AddAction("Drive Distance", 0.75);
+    // driveDriveTrain.AddAction("Turn", 90);
+    // driveDriveTrain.AddAction("Drive Distance", 0.75);
     
+    // driveDriveTrain.AddAction("Drive Distance", -0.75);
+    // driveDriveTrain.AddAction("Turn", -90);
+    // driveDriveTrain.AddAction("Drive Distance", -0.75);
+    // driveDriveTrain.AddAction("Turn", -90);
+    // driveDriveTrain.AddAction("Drive Distance", -0.75);
+    // driveDriveTrain.AddAction("Turn", -90);
+    // driveDriveTrain.AddAction("Drive Distance", -0.75);
+    
+    // driveDriveTrain.AddAction("Drive Distance", -1);
+    // driveDriveTrain.AddAction("Drive Distance", -0.5);
+
+    // driveDriveTrain.AddAction("Drive Distance", 1);
+    
+    // new Print(driveDriveTrain.getSchedule().ToString());
   }
 
   /** This function is called periodically during autonomous. */
@@ -121,19 +127,6 @@ public class Robot extends TimedRobot {
         break;
       case kDefaultAuto:
       default:
-        // driveDriveTrain.motorCheck();
-        // driveDriveTrain.driveBySpeed(0.2);
-        // driveDriveTrain.driveByPower(0.1);
-        // driveDriveTrain.driveTrainPeriodic();
-        // driveDriveTrain.testEncoders();
-        // driveDriveTrain.testVelocity();
-
-        // if (doTurn){
-        //   driveDriveTrain.turn(90);
-        //   driveDriveTrain.Disabled();
-        //   doTurn = false;
-        // }
-
         // driveDriveTrain.printDegrees();
         // driveDriveTrain.printDegreesFromTarget();
         // System.out.println(grace);
@@ -152,6 +145,7 @@ public class Robot extends TimedRobot {
         //     driveDriveTrain.turn(lastDegreesFromTarget);
         //  
         driveDriveTrain.MakeAction();
+        // driveDriveTrain.testEncoders();
         break;
     }
   }
