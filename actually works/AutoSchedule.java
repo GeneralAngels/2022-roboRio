@@ -27,8 +27,6 @@ public class AutoSchedule {
         this.act = null;
         next = null;
     }
-
-    
     
     public void SetNext(AutoSchedule next){
         this.next = next;
@@ -43,12 +41,15 @@ public class AutoSchedule {
     }
 
     public void removeAction(){
-        act = next.getAction();
-        next = next.getNext();
+        if (next == null) act = null;
+        else {
+            act = next.getAction();
+            next = next.getNext();    
+        }
     }
 
     public void addAction(Action act){
-        if (act == null) this.act = act;
+        if (this.act == null) this.act = act; // new Action(act.getActionName(), act.getTarget());
         else if (next == null) next = new AutoSchedule(act);
         else
             next.addAction(act);
@@ -61,6 +62,16 @@ public class AutoSchedule {
 
     public String currentActionName(){
         return act.getActionName();
+    }
+
+    @Override
+    public String toString(){
+        if (next != null) return " -> " + act.toString() + next.toString();
+        return " -> " + act.toString();
+    }
+
+    public boolean currentActionFinished(double value, double rangeOfError){
+        return act.finished(value, rangeOfError);
     }
 }
 
