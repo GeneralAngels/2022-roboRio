@@ -13,7 +13,7 @@ import com.ctre.phoenix.motorcontrol.ControlMode;
 public class MotorGroup {
     private PID distancePID;
     private TalonFX backMotor;
-    private TalonFX frontMotor;
+    private TalonFX firstMotor;
     private double distanceToTravel;
     private double MaxPower = 0.2;
     private double error;
@@ -22,11 +22,13 @@ public class MotorGroup {
 
     private String groupName;
 
-    public MotorGroup(int backPort, int frontPort, String name){
-        this.backMotor = new TalonFX(backPort);
-        this.frontMotor = new TalonFX(frontPort);
-        groupName = name;
+    private double encoder_to_meter;
 
+    public MotorGroup(int backPort, int frontPort, double wheel_diameter, String name){
+        this.backMotor = new TalonFX(backPort);
+        this.firstMotor = new TalonFX(frontPort);
+        this.encoder_to_meter = roboConsts.ENCODER_TO_RADIAN * wheel_diameter;
+        groupName = name;
     }
 
     /**
@@ -35,8 +37,8 @@ public class MotorGroup {
      * @param ki ki of pid
      * @param kd kd of pid
      */
-    public void SetDistancePID(double kp, double ki, double kd){
-        distancePID = new PID(kp, ki, kd, roboConsts.MAX_POWER);
+    public void setDistancePID(double kp, double ki, double kd, double max_in){
+        distancePID = new PID(kp, ki, kd, max_in);
     }
 
     /**
@@ -45,39 +47,43 @@ public class MotorGroup {
      * @param ki ki of pid
      * @param kd kd of pid
      */
-    public void SetSPID(double kp, double ki, double kd){
-        sPID = new PID(kp, ki, kd, roboConsts.MAX_POWER);
+    public void setSPID(double kp, double ki, double kd, double maxOut){
+        sPID = new PID(kp, ki, kd, maxOut);
     }
 
     /**
      * sets the power sent to both motors of the group
      * @param power power to send
      */
-    public void SetPower(double power){
-        this.frontMotor.set(ControlMode.PercentOutput, power);
+    public void setPower(double power){
+        this.firstMotor.set(ControlMode.PercentOutput, power);
         this.backMotor.set(ControlMode.PercentOutput, power);
     }
 
-    public double GetBackEncoderValue(){
+    public double getBackEncoderValue(){
         return this.backMotor.getSelectedSensorPosition();
     }
 
-    public double GetFrontEncoderValue(){
-        return this.frontMotor.getSelectedSensorPosition();
+    public double getFrontEncoderValue(){
+        return this.firstMotor.getSelectedSensorPosition();
     }
 
-    public double GetEncoderValue(){
-        return (GetFrontEncoderValue() + GetBackEncoderValue()) /2;
+    public double getEncoderValue(){
+        return (getFrontEncoderValue() + getBackEncoderValue()) /2;
     }
 
-    public void SetInverted(boolean inverted){
-        this.frontMotor.setInverted(inverted);
+    public void setInverted(boolean inverted){
+        this.firstMotor.setInverted(inverted);
         this.backMotor.setInverted(inverted);
     }
 
+    public void setInverted(boolean firstInvert, boolean secondInvert){
+        this.firstMotor.setInverted(firstInvert);
+        this.backMotor.setInverted(secondInvert);
+    }
+
     public void resetEncoders(){
-        new Print("wow");
-        this.frontMotor.setSelectedSensorPosition(0);
+        this.firstMotor.setSelectedSensorPosition(0);
         this.backMotor.setSelectedSensorPosition(0);
     }
 
@@ -86,14 +92,14 @@ public class MotorGroup {
      */
     public double getDistance(){
         // return GetEncoderValue() / roboConsts.METER_DRIVE;
-        return GetEncoderValue() * roboConsts.ENCODER_TO_M;
+        return getEncoderValue() * this.encoder_to_meter;
     }
 
     /**
      * sets the distance to travel
      * @param distance the distance to travel
      */
-    public void SetTravelDistance(double distance){
+    public void setTravelDistance(double distance){
         distanceToTravel = distance;
         error = distance;
     }
@@ -102,7 +108,7 @@ public class MotorGroup {
      *the distance to travel
      * @return the distance to travel
      */
-    public double GetTravelDistance(){
+    public double getTravelDistance(){
         return this.distanceToTravel;
     }
 
@@ -110,46 +116,53 @@ public class MotorGroup {
      *  drive distance with PID
      * @return input power
      */
-    public double DriveByDistance(){
-        error = GetDistanceError();
+    public double driveByDistance(){
+        error = getDistanceError();
         // new Print(GetEncoderValue());
         new Print(groupName);
         new Print("distance:  "+ getDistance());
         double power = distancePID.Compute(error);
         new Print("power:  " + power);
-        SetPower(power);
+        setPower(power);
         return power;
     }
 
-    public double GetSpeedPS(){
-        return (frontMotor.getSelectedSensorVelocity() + backMotor.getSelectedSensorVelocity()) / 2;
+    /***
+     * gets each motors velocity in pulses/100msec, multiplies by 10 to get pulses/sec
+     * and doens an average
+     * @return the average speed of the two motors in pulses per second
+     */
+    public double getSpeedPS(){
+        return (firstMotor.getSelectedSensorVelocity() + backMotor.getSelectedSensorVelocity()) / 2 * 10;
     }
 
-    public double GetSpeedMS(){
-        return GetSpeedPS() * roboConsts.ENCODER_TO_M;
+    public double getSpeedMS(){
+        return getSpeedPS() * this.encoder_to_meter;
     }
 
-    public double GetDistanceError(){
+    public double getDistanceError(){
         return distanceToTravel - getDistance();
     }
 
-    public void  ResetDistancePID(){
+    public void  resetDistancePID(){
         distancePID.Reset();
     }
 
-    public void ResetSPID(){
+    public void resetSPID(){
         sPID.Reset();
         currPow = 0;
     }
 
-    public void driveBySpeed(double speed){
-        double velocity_average = GetSpeedMS();
+    public double driveBySpeed(double speed){
+        double velocity_average = getSpeedMS();
         double speedErr = speed - velocity_average;
-        System.out.println("speed error" + this.groupName + "   :" + speedErr);
-        currPow += sPID.Compute(speedErr);
-        currPow = Math.max(-roboConsts.MAX_POWER, Math.min(currPow, roboConsts.MAX_POWER));
-        SetPower(currPow);        
-        System.out.println("currPow " + this.groupName + "  :"+ currPow);
+        double toAdd = sPID.Compute(speedErr) / 10; 
+        currPow += toAdd;
+        // currPow = Math.max(-roboConsts.MAX_POWER, Math.min(currPow, roboConsts.MAX_POWER));
+        if (currPow < 0) currPow = Math.max(-roboConsts.MAX_POWER, currPow);
+        else currPow = Math.min(roboConsts.MAX_POWER, currPow);
+        setPower(currPow);  
+        return velocity_average;
     }
 
     public void motorPeriodic(){
@@ -158,12 +171,15 @@ public class MotorGroup {
 
     public void testEncoders(){
         System.out.println(groupName);
-        System.out.println(GetEncoderValue() + " - " + getDistance());
+        System.out.println(getEncoderValue() + " - " + getDistance());
         System.out.println("-");
     }
 
     public void testVelocity(){
-        ;
+        System.out.println(groupName);
+        System.out.println("front: " + firstMotor.getSelectedSensorVelocity() * 10 * this.encoder_to_meter);
+        System.out.println("back: " + backMotor.getSelectedSensorVelocity() * 10 * this.encoder_to_meter);
+        System.out.println("avg: " + getSpeedMS());
     }
 
 
