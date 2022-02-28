@@ -28,7 +28,7 @@ public class AutoSchedule {
         next = null;
     }
     
-    public void SetNext(AutoSchedule next){
+    public void setNext(AutoSchedule next){
         this.next = next;
     }
     
@@ -55,9 +55,19 @@ public class AutoSchedule {
             next.addAction(act);
     }
 
-    public int Length(){
+    public void addAction(AutoSchedule schedule){
+        if (this.act == null) {
+            this.act = schedule.getAction();
+            this.next = schedule.getNext();
+        }
+        else if (next == null) this.next = schedule;
+        else
+            next.addAction(schedule);
+    }
+
+    public int length(){
         if (next == null) return 1;
-        return 1 + next.Length();
+        return 1 + next.length();
     }
 
     public String currentActionName(){
@@ -66,12 +76,18 @@ public class AutoSchedule {
 
     @Override
     public String toString(){
+        if (act == null) return "empty schedule";
         if (next != null) return " -> " + act.toString() + next.toString();
         return " -> " + act.toString();
     }
 
     public boolean currentActionFinished(double value, double rangeOfError){
         return act.finished(value, rangeOfError);
+    }
+
+    public void reset(){
+        act = null;
+        next = null;
     }
 }
 
