@@ -7,8 +7,6 @@
 
 package frc.robot;
 
-
-import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -25,7 +23,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class Robot extends TimedRobot {
 
   // i have no idea
-  private static final XboxController cont = new XboxController(0); 
+  private static final XboxController controller = new XboxController(0); 
   // private CANSparkMax saprky = new CANSparkMax(4 , MotorType.kBrushless);
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
@@ -33,8 +31,15 @@ public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   // creating a drivetrain object used for driving the robot using joysticks
   //parameters: joysticks ports
-  public Drive_Train driveDriveTrain = new Drive_Train(1, 0, 2);
+  public Drive_Train driveDriveTrain = new Drive_Train(8, 9, 0);// left, right, controller
 
+  boolean shooting;
+  boolean opening; 
+  boolean feeding; 
+  boolean rolling;
+
+
+  public BuiltActions actions; 
   /**
    * This function is run when the robot is first started up and should be used
    * for any initialization code.
@@ -45,14 +50,16 @@ public class Robot extends TimedRobot {
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
     // initializing drive trains
-    driveDriveTrain.Init();
+    driveDriveTrain.init();
     driveDriveTrain.resetRotation();
 
+    actions = new BuiltActions();   
     
-    // driveDriveTrain.testVelocity();
+    shooting = false;
+    opening = false;
+    feeding = false;
+    rolling = false;
 
-    // checkPID();
-    
 
   }
 
@@ -87,35 +94,14 @@ public class Robot extends TimedRobot {
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
 
-    driveDriveTrain.AutonomusInit();
+    driveDriveTrain.autonomusInit();
 
-    // driveDriveTrain.AddAction("Drive Distance", 0.5);
-    // driveDriveTrain.AddAction("Turn", 90);
-    // driveDriveTrain.AddAction("Drive Distance", 0.5);
-    // driveDriveTrain.AddAction("Turn", 90);
-    driveDriveTrain.ResetAll();
-    // driveDriveTrain.AddAction("Drive Distance", 0.75);
-    // driveDriveTrain.AddAction("Turn", 90);
-    // driveDriveTrain.AddAction("Drive Distance", 0.75);
-    // driveDriveTrain.AddAction("Turn", 90);
-    // driveDriveTrain.AddAction("Drive Distance", 0.75);
-    // driveDriveTrain.AddAction("Turn", 90);
-    // driveDriveTrain.AddAction("Drive Distance", 0.75);
-    
-    // driveDriveTrain.AddAction("Drive Distance", -0.75);
-    // driveDriveTrain.AddAction("Turn", -90);
-    // driveDriveTrain.AddAction("Drive Distance", -0.75);
-    // driveDriveTrain.AddAction("Turn", -90);
-    // driveDriveTrain.AddAction("Drive Distance", -0.75);
-    // driveDriveTrain.AddAction("Turn", -90);
-    // driveDriveTrain.AddAction("Drive Distance", -0.75);
-    
-    // driveDriveTrain.AddAction("Drive Distance", -1);
-    // driveDriveTrain.AddAction("Drive Distance", -0.5);
+    driveDriveTrain.resetMovement();
+  
+    // driveDriveTrain.addDriveAction(actions.findTape());
+    driveDriveTrain.addShootingAction(new Action("Set Power", 0.1));
 
-    // driveDriveTrain.AddAction("Drive Distance", 1);
     
-    // new Print(driveDriveTrain.getSchedule().ToString());
   }
 
   /** This function is called periodically during autonomous. */
@@ -126,43 +112,20 @@ public class Robot extends TimedRobot {
         // Put custom auto code here
         break;
       case kDefaultAuto:
+      // calling shooter    
+    
       default:
-        // driveDriveTrain.printDegrees();
-        // driveDriveTrain.printDegreesFromTarget();
-        // System.out.println(grace);
-        // if (driveDriveTrain.TargetOnScreen()){
-        //   driveDriveTrain.turn(driveDriveTrain.getDegreesFromTarget());
-        //   grace = 0;
-        //   lastDegreesFromTarget = driveDriveTrain.getDegreesFromTarget();
-          
-        // }
-        // else
-        //   grace++;
-        //   if (grace == 33){
-        //     driveDriveTrain.resetRotation();
-        //     lastDegreesFromTarget = 0;
-        //   } else {
-        //     driveDriveTrain.turn(lastDegreesFromTarget);
-        //  
-        driveDriveTrain.MakeAction();
+        // driveDriveTrain.testVelocity();
         // driveDriveTrain.testEncoders();
+        // driveDriveTrain.driveBySpeed(1);
+        if(controller.getAButtonPressed())
+
+        driveDriveTrain.makeShootingAction();
+        driveDriveTrain.makeIntakeAction();
+        driveDriveTrain.makeDriveAction();
         break;
     }
   }
-
-  // public void checkPID(){
-  //   PID pidTest = new PID(0.4, 1, 0.05);
-
-  //   double target = 10;
-  //   double thing = 0;
-  //   double error = target;
-
-  //   while (thing != 0){
-  //     thing += pidTest.Compute(error);
-  //     System.out.println(thing);
-  //     error = target - thing;
-  //   }
-  // }
 
   /** This function is called once when teleop is enabled. */
   @Override
@@ -172,19 +135,74 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    // if(cont.getRightBumper())
-      // saprky.set(0.3);
-    // driving using joysticks
-    // driveDriveTrain.JoyStickDrive();
-    // driveDriveTrain.testPidgey();
+    // driveDriveTrain.intakeTeleOp();
+    // driveDriveTrain.feederTeleOp();
+    // driveDriveTrain.shootingTeleOp();
 
+    // driveDriveTrain.MakeIntakeAction();
+    // if(cont.getRightBumperPressed())
+    // driveDriveTrain.JoyStickDriveBySpeed();
+    // driveDriveTrain.ControllerDriveBySpeed();
+    // driveDriveTrain.testController();
+    
+    if(controller.getAButtonPressed() && !shooting){
+      driveDriveTrain.addShootingAction(new Action("Set Power", 0.7));
+      // driveDriveTrain.addShootingAction(new Action("Shoot", 0.2));
+      shooting = true;
+    }
+    else if(controller.getAButtonPressed()){
+      // driveDriveTrain.addShootingAction(new Action("Wait"));
+      driveDriveTrain.addShootingAction(new Action("Set Power", 0));
+      shooting = false;
+    }
+
+    if(controller.getBButtonPressed() && !opening){
+      driveDriveTrain.addIntakeAction(new Action("Open"));
+      opening = true;
+    }
+    else if(controller.getBButtonPressed()){
+      // driveDriveTrain.addShootingAction(new Action("Wait"));
+      driveDriveTrain.addIntakeAction(new Action("Close"));
+      opening = false;
+    }
+
+    if(controller.getYButtonPressed() && !feeding){
+      driveDriveTrain.addFeederAction(new Action("Feed"));
+      feeding = true;
+    }
+    else if(controller.getYButtonPressed()){
+      // driveDriveTrain.addShootingAction(new Action("Wait"));
+      driveDriveTrain.addFeederAction(new Action("Stop Feeding"));
+      feeding = false;
+    }
+
+    if(controller.getXButtonPressed() && !rolling){
+      driveDriveTrain.addIntakeAction(new Action("Take"));
+      rolling = true;
+    }
+    else if(controller.getXButtonPressed()){
+      // driveDriveTrain.addShootingAction(new Action("Wait"));
+      driveDriveTrain.addIntakeAction(new Action("Stop Taking"));
+      rolling = false;
+    }
+
+
+      // driveDriveTrain.setClimbing(controller.getLeftY() * 0.8);
+      // if (controller.getAButtonPressed()) driveDriveTrain.resetClimbing();
+    // if (controller.getBButtonPressed() && driveDriveTrain.intakeOpen()){
+    //   driveDriveTrain.addIntakeAction(act);
+    // }
+    
+    driveDriveTrain.makeShootingAction();
+    driveDriveTrain.makeIntakeAction();
+    driveDriveTrain.makeDriveAction();
+    driveDriveTrain.makeFeedingAction();
   }
 
   /** This function is called once when the robot is disabled. */
   @Override
   public void disabledInit() {
-    driveDriveTrain.Disabled();
-    
+    driveDriveTrain.disabled();    
   }
 
   /** This function is called periodically when disabled. */
