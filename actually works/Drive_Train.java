@@ -40,7 +40,7 @@ public class Drive_Train {
 
     private PID rotationPID = new PID(0.5, 0.15, 0.1, roboConsts.MAX_TURN_POWER);
 
-    private final RoboIntake intake = new RoboIntake(11, 8, 9);
+    private final RoboIntake intake = new RoboIntake(11, 9, 8);
 
     private AutoSchedule driveSchedule;
     private AutoSchedule intakeSchedule;
@@ -98,14 +98,14 @@ public class Drive_Train {
 
     public void shootingTeleOp(){
         
-    if(controller.getAButtonPressed()){
-        addShootingAction(new Action("Set Power", 0.2));
-        // driveDriveTrain.addShootingAction(new Action("Shoot", 0.2));
-      }
-      else if(controller.getAButtonPressed()){
-        // driveDriveTrain.addShootingAction(new Action("Wait"));
-        addShootingAction(new Action("Set Power", 0));
-      }
+        if(controller.getAButtonPressed()){
+            addShootingAction(new Action("Set Power", 0.2));
+            // driveDriveTrain.addShootingAction(new Action("Shoot", 0.2));
+        }
+        else if(controller.getAButtonPressed()){
+            // driveDriveTrain.addShootingAction(new Action("Wait"));
+            addShootingAction(new Action("Set Power", 0));
+        }
     }
 
     public void feederTeleOp(){
