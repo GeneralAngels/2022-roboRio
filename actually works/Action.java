@@ -9,6 +9,10 @@ public class Action {
         this.target = target;
     }
 
+    public Action(String name){
+        this.actionName = name;
+    }
+
     public boolean finished(double value, double rangeOfError){
         return value < this.target + rangeOfError &&
          value > this.target - rangeOfError;
